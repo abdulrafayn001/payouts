@@ -1,19 +1,22 @@
 import React, { useState } from "react";
-import styled from "styled-components";
 import ReactPaginate from "react-paginate";
-import { Payout } from "../types";
-import usePagination from "../hooks/usePagination";
-import { FetchDataFunction } from "../types/apiCalls.type";
+import styled from "styled-components";
+
+import { convertTimeFormat } from "../services/dateService";
+import { FetchDataFunction, Payout, StatusProps } from "../types";
 import fetchPayoutData from "../services/dataService";
+import usePagination from "../hooks/usePagination";
+
+const RootContainer = styled.div`
+  padding: 0px 30px;
+  margin-top: 10px;
+`;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-`;
-
-const TableHeader = styled.thead`
-  background-color: #f0f0f0;
+  margin-bottom: 50px;
 `;
 
 const TableRow = styled.tr`
@@ -23,12 +26,32 @@ const TableRow = styled.tr`
 `;
 
 const TableCell = styled.td`
-  padding: 12px;
-  border: 1px solid #ddd;
+  padding: 13px 13px;
 `;
 
-const SearchContainer = styled.div`
-  margin-bottom: 20px;
+const StatusValue = styled.td<StatusProps>`
+  background-color: ${({ status }) => {
+    switch (status) {
+      case "pending":
+        return "#c1c4c7";
+      case "completed":
+        return "#14ae5c";
+      default:
+        return "";
+    }
+  }};
+  color: ${({ status }) => {
+    switch (status) {
+      case "pending":
+        return "black";
+      case "completed":
+        return "white";
+      default:
+        return "";
+    }
+  }};
+  padding: 3px 8px;
+  border-radius: 8px;
 `;
 
 const SearchInput = styled.input`
@@ -36,6 +59,27 @@ const SearchInput = styled.input`
   border-radius: 4px;
   border: 1px solid #ccc;
   margin-right: 10px;
+  width: 300px;
+`;
+
+const Title = styled.h1`
+  color: #272b30;
+`;
+const SubTitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const SubTitle = styled.h3`
+  color: #272b30;
+  padding-left: 7px;
+`;
+
+const SubTitleDiv = styled.div`
+  background-color: #999dff;
+  width: 16px;
+  height: 30px;
+  border-radius: 4px;
 `;
 
 const PaginationContainer = styled.div`
@@ -60,16 +104,28 @@ const PaginationContainer = styled.div`
   }
 
   .active {
-    background-color: #4caf50;
+    background-color: #f0f0f0;
     color: white;
-    border: 1px solid #4caf50;
+    border: 1px solid #f0f0f0;
   }
+`;
+
+const TopContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+`;
+const NoDataCell = styled.div`
+  text-align: center;
+  padding: 50px 0px;
 `;
 
 const PayoutTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchChange = (value: string) => {
+    handlePageClick({ selected: 0 });
     setSearchTerm(value);
   };
 
@@ -83,48 +139,67 @@ const PayoutTable: React.FC = () => {
   );
 
   return (
-    <div>
-      <SearchContainer>
-        <SearchInput
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => handleSearchChange(e.target.value)}
-        />
-      </SearchContainer>
-      <Table>
-        <TableHeader>
-          <tr>
-            <th>Date and Time</th>
-            <th>Status</th>
-            <th>Value</th>
-            <th>Username</th>
-          </tr>
-        </TableHeader>
-        <tbody>
-          {payouts.map((payout, index) => (
-            <TableRow key={index}>
-              <TableCell>{payout.dateAndTime}</TableCell>
-              <TableCell>{payout.status}</TableCell>
-              <TableCell>{payout.value}</TableCell>
-              <TableCell>{payout.username}</TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
-      {totalPages > 0 && (
-        <PaginationContainer>
-          <ReactPaginate
-            pageCount={totalPages}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageClick}
-            containerClassName={"pagination"}
-            activeClassName={"active"}
+    <>
+      <Title>Payouts</Title>
+      <RootContainer>
+        <TopContainer>
+          <SubTitleContainer>
+            <SubTitleDiv></SubTitleDiv>
+            <SubTitle>Payout History</SubTitle>
+          </SubTitleContainer>
+          <SearchInput
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
-        </PaginationContainer>
-      )}
-    </div>
+        </TopContainer>
+
+        <Table>
+          <tr>
+            <th className="text-alignment">Date and Time</th>
+            <th className="text-alignment">Status</th>
+            <th className="text-alignment">Value</th>
+            <th className="text-alignment">Username</th>
+          </tr>
+          <tbody>
+            {payouts.length ? (
+              payouts.map((payout, index) => (
+                <TableRow key={index}>
+                  <TableCell>{convertTimeFormat(payout.dateAndTime)}</TableCell>
+                  <TableCell>
+                    <StatusValue status={payout.status.toLowerCase()}>
+                      {payout.status}
+                    </StatusValue>
+                  </TableCell>
+                  <TableCell>{payout.value}</TableCell>
+                  <TableCell>{payout.username}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4}>
+                  <NoDataCell>No Data Found!</NoDataCell>
+                </TableCell>
+              </TableRow>
+            )}
+          </tbody>
+        </Table>
+        {totalPages > 0 && (
+          <PaginationContainer>
+            <ReactPaginate
+              breakLabel="..."
+              pageCount={totalPages}
+              marginPagesDisplayed={1}
+              pageRangeDisplayed={3}
+              onPageChange={handlePageClick}
+              containerClassName={"pagination"}
+              activeClassName={"active"}
+            />
+          </PaginationContainer>
+        )}
+      </RootContainer>
+    </>
   );
 };
 

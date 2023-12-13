@@ -1,6 +1,5 @@
 import axios from "axios";
-import { FetchDataResult } from "../types/apiCalls.type";
-import { Payout } from "../types";
+import { FetchDataResult, Payout } from "../types";
 
 const fetchPayoutData = async (
   searchTerm: string,
@@ -8,7 +7,6 @@ const fetchPayoutData = async (
 ): Promise<FetchDataResult<Payout>> => {
   try {
     const itemsPerPage = import.meta.env.VITE_ITEMS_PER_PAGE;
-    const offset = currentPage * itemsPerPage;
     const baseURL: string = import.meta.env.VITE_BASE_URL || "";
     let endpoint: string = `${baseURL}/payouts`; // Default endpoint for fetching data
 
@@ -18,8 +16,8 @@ const fetchPayoutData = async (
 
     const response = await axios.get(endpoint, {
       params: {
+        page: currentPage,
         limit: itemsPerPage,
-        offset: offset,
       },
     });
     const data: Payout[] =

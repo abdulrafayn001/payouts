@@ -1,12 +1,6 @@
-import "./App.css";
 import PayoutTable from "./components/PayoutTable";
+import "./App.css";
 
-function App() {
-  return (
-    <>
-      <PayoutTable />
-    </>
-  );
-}
+const App = () => <PayoutTable />;
 
 export default App;
